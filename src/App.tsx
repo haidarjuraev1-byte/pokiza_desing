@@ -1,49 +1,30 @@
-// Сюда вставим твой основной React-код на следующем шаге.
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Clock, Search, Bell, Plus, LayoutDashboard, Settings, 
-  MessageSquare, Calendar, X, Paperclip, ChevronRight,
-  Filter, Check, Link, UploadCloud, FileImage, Download,
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Clock, Bell, Plus, LayoutDashboard,
+  MessageSquare, Calendar, X, ChevronRight,
+  Filter, Check, Link,
   Users, LogOut, Shield, User, PenTool, Trash2, UserPlus, RefreshCw
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- FIREBASE INIT ---
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: 'AIzaSyC8Nk_4J1j6wuoZysdDxjxgJXNlS41MCqQ',
+  authDomain: 'pokiza-design-efb20.firebaseapp.com',
+  projectId: 'pokiza-design-efb20',
+  storageBucket: 'pokiza-design-efb20.firebasestorage.app',
+  messagingSenderId: '965648604086',
+  appId: '1:965648604086:web:6f69fc134d0f261cb4bf17',
 };
 
-const isFirebaseConfigured =
-  Boolean(firebaseConfig.apiKey) &&
-  Boolean(firebaseConfig.projectId) &&
-  Boolean(firebaseConfig.appId);
-
-let app: any = null;
-let auth: any = null;
-let db: any = null;
-
-const appId = import.meta.env.VITE_APP_ID || 'pokiza-design';
-
-try {
-  if (isFirebaseConfigured) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } else {
-    console.warn("Firebase config is missing. App will run with local state.");
-  }
-} catch (e) {
-  console.warn("Firebase config is invalid. App will run with local state.", e);
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = 'pokiza-design';
 
 const STATUSES = {
   NEW: { label: 'Новая', color: 'bg-gray-100 text-gray-700', border: 'border-gray-200' },
@@ -70,7 +51,6 @@ const ROLES = {
 };
 
 const generateAvatar = (name, gender, seedModifier = '') => {
-  // Сохраняем изначальные лица для демо-данных
   const originalSeeds = {
     'Алексей Админ': 'Alex',
     'Мария Маркетолог': 'Maria',
@@ -81,18 +61,15 @@ const generateAvatar = (name, gender, seedModifier = '') => {
   const isOriginal = originalSeeds[name] && !seedModifier;
   const seed = isOriginal ? originalSeeds[name] : encodeURIComponent(name + seedModifier);
   const isFemale = gender === 'female';
-  
-  // Если это оригинальные юзеры, возвращаем старую версию API для 100% совпадения
+
   if (isOriginal) {
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
   }
 
-  // Для новых юзеров и при смене аватарки - используем новую 9.x с позитивными эмоциями
-  const tops = isFemale 
-    ? 'bob,bun,curly,curvy,straight01,straight02' 
+  const tops = isFemale
+    ? 'bob,bun,curly,curvy,straight01,straight02'
     : 'dreads01,frizzle,shaggy,shortCurly,shortFlat,shortRound,shortWaved,sides,theCaesar';
-  
-  // Принудительно задаем улыбки и позитивные глаза
+
   const faceParams = '&mouth=smile,twinkle,default&eyes=default,happy,wink';
 
   return `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&top=${tops}${isFemale ? '&facialHairProbability=0' : ''}${faceParams}`;
@@ -138,9 +115,9 @@ const INITIAL_TASKS = [
   }
 ];
 
-const Avatar = ({ src, alt, size = "md", className="" }) => {
-  const sizes = { sm: "w-6 h-6", md: "w-8 h-8", lg: "w-16 h-16", xl: "w-24 h-24" };
-  return <img src={src} alt={alt || "Avatar"} className={`${sizes[size]} rounded-full bg-gray-100 object-cover border border-gray-200 shrink-0 ${className}`} />;
+const Avatar = ({ src, alt, size = 'md', className = '' }) => {
+  const sizes = { sm: 'w-6 h-6', md: 'w-8 h-8', lg: 'w-16 h-16', xl: 'w-24 h-24' };
+  return <img src={src} alt={alt || 'Avatar'} className={`${sizes[size]} rounded-full bg-gray-100 object-cover border border-gray-200 shrink-0 ${className}`} />;
 };
 
 const Badge = ({ statusKey, priorityKey, custom, children }) => {
@@ -157,12 +134,12 @@ const Badge = ({ statusKey, priorityKey, custom, children }) => {
 };
 
 const Button = ({ children, variant = 'primary', className = '', ...props }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const base = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   const variants = {
-    primary: "bg-[#E53935] hover:bg-[#B71C1C] text-white focus:ring-[#E53935]",
-    secondary: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-200",
-    ghost: "bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-200",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500 border border-red-200"
+    primary: 'bg-[#E53935] hover:bg-[#B71C1C] text-white focus:ring-[#E53935]',
+    secondary: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-200',
+    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-200',
+    danger: 'bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500 border border-red-200'
   };
   return (
     <button className={`${base} ${variants[variant]} px-4 py-2 text-sm ${className}`} {...props}>
@@ -242,14 +219,14 @@ const LoginScreen = ({ users, onLogin, isDbLoading }) => {
     <div className="min-h-screen bg-[#F8F9FB] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-xl flex flex-col items-center">
         <div className="w-16 h-16 rounded-2xl bg-[#E53935] flex items-center justify-center text-white font-bold text-3xl shadow-lg mb-6">D</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">Вход в Pokiza Desing</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">Вход в Pokiza Design</h1>
         <p className="text-gray-500 mb-8 text-center text-sm">Введите ваши учетные данные для доступа</p>
 
         {isDbLoading ? (
-           <div className="flex flex-col items-center justify-center py-8 gap-3">
-             <RefreshCw className="animate-spin text-[#E53935]" size={32} />
-             <p className="text-sm text-gray-500">Синхронизация с базой данных...</p>
-           </div>
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <RefreshCw className="animate-spin text-[#E53935]" size={32} />
+            <p className="text-sm text-gray-500">Синхронизация с базой данных...</p>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="w-full space-y-4">
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
@@ -268,7 +245,7 @@ const LoginScreen = ({ users, onLogin, isDbLoading }) => {
     </div>
   );
 };
-  
+
 const AdminPanel = ({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -292,26 +269,11 @@ const AdminPanel = ({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser 
   const handleSave = (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.email.trim()) return;
-    
+
     if (editingUser) {
-      onUpdateUser({
-        ...editingUser,
-        name: formData.name,
-        role: formData.role,
-        email: formData.email,
-        password: formData.password,
-        gender: formData.gender,
-        avatar: avatarUrl 
-      });
+      onUpdateUser({ ...editingUser, name: formData.name, role: formData.role, email: formData.email, password: formData.password, gender: formData.gender, avatar: avatarUrl });
     } else {
-      onAddUser({
-        name: formData.name,
-        role: formData.role,
-        email: formData.email,
-        password: formData.password || '123456',
-        gender: formData.gender,
-        avatar: avatarUrl
-      });
+      onAddUser({ name: formData.name, role: formData.role, email: formData.email, password: formData.password || '123456', gender: formData.gender, avatar: avatarUrl });
     }
     setIsModalOpen(false);
   };
@@ -361,12 +323,12 @@ const AdminPanel = ({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser 
                       <PenTool size={16} className="mr-1.5" /> Изменить
                     </Button>
                     <Button variant="danger" onClick={() => onDeleteUser(user.id)} disabled={user.id === currentUser.id} className="px-3 py-1.5">
-                      <Trash2 size={16} className={user.id === currentUser.id ? "mr-0" : "mr-1.5"} />
-                      {user.id !== currentUser.id && "Удалить"}
+                      <Trash2 size={16} className={user.id === currentUser.id ? 'mr-0' : 'mr-1.5'} />
+                      {user.id !== currentUser.id && 'Удалить'}
                     </Button>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -381,33 +343,33 @@ const AdminPanel = ({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser 
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="flex flex-col items-center mb-4 gap-2">
-                 <div onClick={randomizeAvatar} className="cursor-pointer hover:opacity-80 transition-opacity relative group" title="Кликните, чтобы сменить лицо">
-                   <Avatar src={avatarUrl} size="lg" className="border-2 border-gray-300" />
-                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <RefreshCw size={24} className="text-white" />
-                   </div>
-                 </div>
-                 <span className="text-[10px] text-gray-400">Кликните по фото для смены</span>
+                <div onClick={randomizeAvatar} className="cursor-pointer hover:opacity-80 transition-opacity relative group" title="Кликните, чтобы сменить лицо">
+                  <Avatar src={avatarUrl} size="lg" className="border-2 border-gray-300" />
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <RefreshCw size={24} className="text-white" />
+                  </div>
+                </div>
+                <span className="text-[10px] text-gray-400">Кликните по фото для смены</span>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Имя и Фамилия</label>
-                <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Например: Иван Иванов" />
+                <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Например: Иван Иванов" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input required type="email" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="email@example.com" />
+                  <input required type="email" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="email@example.com" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
-                  <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Пароль" />
+                  <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Пароль" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Пол</label>
-                  <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.gender} onChange={e => { 
-                    setFormData({...formData, gender: e.target.value}); 
+                  <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.gender} onChange={e => {
+                    setFormData({ ...formData, gender: e.target.value });
                     setAvatarUrl(generateAvatar(formData.name || 'User', e.target.value, Math.random().toString(36).substring(7)));
                   }}>
                     <option value="male">Мужской</option>
@@ -416,14 +378,12 @@ const AdminPanel = ({ users, onAddUser, onUpdateUser, onDeleteUser, currentUser 
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Права доступа (Роль)</label>
-                  <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                  <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
                     {Object.entries(ROLES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Администратор: Полный доступ. Маркетолог: Управление задачами. Дизайнер: Исполнение задач.
-              </p>
+              <p className="text-xs text-gray-500 mt-2">Администратор: Полный доступ. Маркетолог: Управление задачами. Дизайнер: Исполнение задач.</p>
               <div className="pt-4 flex justify-end gap-3">
                 <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Отмена</Button>
                 <Button type="submit">Сохранить</Button>
@@ -440,14 +400,12 @@ const Dashboard = ({ tasks, users, onViewTask, onUpdateTask, currentUser }) => {
   const [filters, setFilters] = useState({ month: 'all', assignee: 'all' });
   const [showFilters, setShowFilters] = useState(false);
 
-  const stats = useMemo(() => {
-    return {
-      total: tasks.length,
-      inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
-      review: tasks.filter(t => t.status === 'REVIEW').length,
-      overdue: tasks.filter(t => t.status === 'OVERDUE').length,
-    };
-  }, [tasks]);
+  const stats = useMemo(() => ({
+    total: tasks.length,
+    inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
+    review: tasks.filter(t => t.status === 'REVIEW').length,
+    overdue: tasks.filter(t => t.status === 'OVERDUE').length,
+  }), [tasks]);
 
   const processedTasks = useMemo(() => {
     let result = [...tasks];
@@ -461,10 +419,10 @@ const Dashboard = ({ tasks, users, onViewTask, onUpdateTask, currentUser }) => {
     return result;
   }, [tasks, filters]);
 
-  const months = Array.from({length: 12}, (_, i) => ({ value: i.toString(), label: new Date(2026, i, 1).toLocaleString('ru-RU', { month: 'long' }) }));
+  const months = Array.from({ length: 12 }, (_, i) => ({ value: i.toString(), label: new Date(2026, i, 1).toLocaleString('ru-RU', { month: 'long' }) }));
 
   const handleInlineStatusChange = (e, task) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     onUpdateTask({ ...task, status: e.target.value });
   };
 
@@ -502,14 +460,14 @@ const Dashboard = ({ tasks, users, onViewTask, onUpdateTask, currentUser }) => {
               <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-20 p-4 flex flex-col gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Месяц дедлайна</label>
-                  <select className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none bg-white" value={filters.month} onChange={e => setFilters({...filters, month: e.target.value})}>
+                  <select className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none bg-white" value={filters.month} onChange={e => setFilters({ ...filters, month: e.target.value })}>
                     <option value="all">Все месяцы</option>
                     {months.map(m => <option key={m.value} value={m.value} className="capitalize">{m.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Исполнитель</label>
-                  <select className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none bg-white" value={filters.assignee} onChange={e => setFilters({...filters, assignee: e.target.value})}>
+                  <select className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none bg-white" value={filters.assignee} onChange={e => setFilters({ ...filters, assignee: e.target.value })}>
                     <option value="all">Все исполнители</option>
                     <option value="">Не назначены</option>
                     {users.filter(u => u.role === 'designer' || u.role === 'admin').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -519,7 +477,7 @@ const Dashboard = ({ tasks, users, onViewTask, onUpdateTask, currentUser }) => {
             )}
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
@@ -548,46 +506,26 @@ const Dashboard = ({ tasks, users, onViewTask, onUpdateTask, currentUser }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap" onClick={e => e.stopPropagation()}>
-                      <select 
-                        className={`text-xs font-medium rounded-full px-2 py-1 outline-none border ${canChangeStatus ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'} appearance-none ${s.color} ${s.border}`}
-                        value={task.status}
-                        onChange={(e) => handleInlineStatusChange(e, task)}
-                        disabled={!canChangeStatus}
-                      >
-                        {Object.entries(STATUSES).map(([key, value]) => (
-                          <option key={key} value={key}>{value.label}</option>
-                        ))}
+                      <select className={`text-xs font-medium rounded-full px-2 py-1 outline-none border ${canChangeStatus ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'} appearance-none ${s.color} ${s.border}`} value={task.status} onChange={(e) => handleInlineStatusChange(e, task)} disabled={!canChangeStatus}>
+                        {Object.entries(STATUSES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
                       </select>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                      <Badge priorityKey={task.priority} />
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell"><Badge priorityKey={task.priority} /></td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {hasLinks ? (
-                        <div className="flex items-center gap-1 text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs w-max">
-                          <Link size={12} /> {task.links.length}
-                        </div>
-                      ) : <span className="text-gray-300 text-xs">-</span>}
+                      {hasLinks ? <div className="flex items-center gap-1 text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs w-max"><Link size={12} /> {task.links.length}</div> : <span className="text-gray-300 text-xs">-</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <div className="flex items-center gap-2">
-                        {assignee ? (
-                          <><Avatar src={assignee.avatar} alt={assignee.name} size="sm" /><span className="text-gray-700">{assignee.name.split(' ')[0]}</span></>
-                        ) : <span className="text-gray-400 italic">Не назначен</span>}
+                        {assignee ? <><Avatar src={assignee.avatar} alt={assignee.name} size="sm" /><span className="text-gray-700">{assignee.name.split(' ')[0]}</span></> : <span className="text-gray-400 italic">Не назначен</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
-                        {new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-                      </div>
+                      <div className="flex items-center gap-1.5"><Calendar size={14} className="text-gray-400" />{new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</div>
                     </td>
                   </tr>
                 );
               })}
-              {processedTasks.length === 0 && (
-                 <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">По вашим фильтрам задач не найдено</td></tr>
-              )}
+              {processedTasks.length === 0 && <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">По вашим фильтрам задач не найдено</td></tr>}
             </tbody>
           </table>
         </div>
@@ -606,9 +544,7 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
   const isAssignee = task.assigneeId === currentUser.id;
   const canChangeStatusAndLinks = canEditCore || isAssignee;
 
-  const handleUpdate = (updates) => {
-    onUpdateTask({ ...task, ...updates });
-  };
+  const handleUpdate = (updates) => onUpdateTask({ ...task, ...updates });
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
@@ -618,7 +554,7 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}?taskId=${task.id}`).catch(()=>{});
+    navigator.clipboard.writeText(`${window.location.origin}?taskId=${task.id}`).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -630,48 +566,23 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
           <button onClick={onBack} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500 transition-colors self-start sm:self-auto"><ChevronRight size={20} className="rotate-180" /></button>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <button onClick={copyLink} className="text-xs font-mono text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm">
-                {task.id} {copied ? <Check size={12} className="text-green-600" /> : <Link size={12} />}
-              </button>
+              <button onClick={copyLink} className="text-xs font-mono text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm">{task.id} {copied ? <Check size={12} className="text-green-600" /> : <Link size={12} />}</button>
               <Badge priorityKey={task.priority} />
               <Badge custom="bg-blue-50 text-blue-700">{task.type}</Badge>
             </div>
-            {canEditCore ? (
-               <input 
-                 className="w-full text-2xl font-bold text-gray-900 leading-tight outline-none bg-transparent border-b border-transparent focus:border-gray-300 transition-colors"
-                 value={task.title}
-                 onChange={e => handleUpdate({title: e.target.value})}
-               />
-            ) : (
-               <h1 className="text-2xl font-bold text-gray-900 leading-tight">{task.title}</h1>
-            )}
+            {canEditCore ? <input className="w-full text-2xl font-bold text-gray-900 leading-tight outline-none bg-transparent border-b border-transparent focus:border-gray-300 transition-colors" value={task.title} onChange={e => handleUpdate({ title: e.target.value })} /> : <h1 className="text-2xl font-bold text-gray-900 leading-tight">{task.title}</h1>}
           </div>
         </div>
 
         <div className="p-6 sm:p-8 flex-1 overflow-y-auto">
           <div className="prose prose-sm sm:prose-base max-w-none text-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Описание (ТЗ)</h3>
-            {canEditCore ? (
-               <textarea 
-                 className="w-full min-h-[120px] p-3 text-gray-700 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#E53935]/20 focus:border-[#E53935]"
-                 value={task.description}
-                 onChange={e => handleUpdate({description: e.target.value})}
-               />
-            ) : (
-               <p className="whitespace-pre-wrap">{task.description}</p>
-            )}
+            {canEditCore ? <textarea className="w-full min-h-[120px] p-3 text-gray-700 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#E53935]/20 focus:border-[#E53935]" value={task.description} onChange={e => handleUpdate({ description: e.target.value })} /> : <p className="whitespace-pre-wrap">{task.description}</p>}
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Link size={18} /> Референсы и ссылки</h3>
-            </div>
-            
-            <ReferenceLinksArea 
-              links={task.links || []} 
-              setLinks={(newLinks) => handleUpdate({ links: newLinks })}
-              disabled={!canChangeStatusAndLinks}
-            />
+            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Link size={18} /> Референсы и ссылки</h3></div>
+            <ReferenceLinksArea links={task.links || []} setLinks={(newLinks) => handleUpdate({ links: newLinks })} disabled={!canChangeStatusAndLinks} />
           </div>
 
           <div className="mt-10 pt-6 border-t border-gray-100">
@@ -685,7 +596,7 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
                     <div className="flex-1 bg-gray-50 rounded-xl rounded-tl-none p-3 border border-gray-100">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-medium text-sm text-gray-900">{author ? author.name : 'Удаленный пользователь'}</span>
-                        <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+                        <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.text}</p>
                     </div>
@@ -697,14 +608,8 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
             <div className="flex gap-3">
               <Avatar src={currentUser.avatar} size="md" />
               <div className="flex-1 relative">
-                <textarea 
-                  className="w-full border border-gray-300 rounded-xl p-3 pb-12 text-sm outline-none resize-none focus:border-[#E53935]"
-                  placeholder="Написать комментарий..."
-                  rows="2" value={newComment} onChange={e => setNewComment(e.target.value)}
-                />
-                <div className="absolute bottom-2 right-2 flex gap-2">
-                  <Button onClick={handleAddComment} className="py-1.5 px-4" disabled={!newComment.trim()}>Отправить</Button>
-                </div>
+                <textarea className="w-full border border-gray-300 rounded-xl p-3 pb-12 text-sm outline-none resize-none focus:border-[#E53935]" placeholder="Написать комментарий..." rows="2" value={newComment} onChange={e => setNewComment(e.target.value)} />
+                <div className="absolute bottom-2 right-2 flex gap-2"><Button onClick={handleAddComment} className="py-1.5 px-4" disabled={!newComment.trim()}>Отправить</Button></div>
               </div>
             </div>
           </div>
@@ -714,11 +619,7 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
       <div className="w-full md:w-80 bg-gray-50 p-6 flex flex-col gap-6">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Текущий Статус</label>
-          <select 
-            className={`w-full border rounded-lg p-2.5 text-sm font-medium bg-white outline-none ${canChangeStatusAndLinks ? 'border-gray-300 focus:border-[#E53935]' : 'border-gray-200 text-gray-500 cursor-not-allowed'}`}
-            value={task.status} onChange={e => handleUpdate({ status: e.target.value })}
-            disabled={!canChangeStatusAndLinks}
-          >
+          <select className={`w-full border rounded-lg p-2.5 text-sm font-medium bg-white outline-none ${canChangeStatusAndLinks ? 'border-gray-300 focus:border-[#E53935]' : 'border-gray-200 text-gray-500 cursor-not-allowed'}`} value={task.status} onChange={e => handleUpdate({ status: e.target.value })} disabled={!canChangeStatusAndLinks}>
             {Object.entries(STATUSES).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
           </select>
         </div>
@@ -732,9 +633,7 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
             </select>
           ) : (
             <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-200">
-              {assignee ? (
-                <><Avatar src={assignee.avatar} /><div><div className="text-sm font-medium text-gray-900">{assignee.name}</div><div className="text-xs text-gray-500">{ROLES[assignee.role]?.label}</div></div></>
-              ) : <span className="text-sm text-gray-500 italic p-1">Не назначен</span>}
+              {assignee ? <><Avatar src={assignee.avatar} /><div><div className="text-sm font-medium text-gray-900">{assignee.name}</div><div className="text-xs text-gray-500">{ROLES[assignee.role]?.label}</div></div></> : <span className="text-sm text-gray-500 italic p-1">Не назначен</span>}
             </div>
           )}
         </div>
@@ -748,20 +647,12 @@ const TaskDetail = ({ task, users, onBack, onUpdateTask, currentUser }) => {
 
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5"><Calendar size={14}/> Жесткий дедлайн</label>
-            {canEditCore ? (
-               <input type="date" className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none" value={task.deadline} onChange={e => handleUpdate({deadline: e.target.value})} />
-            ) : (
-               <div className="text-sm font-medium text-gray-900">{new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-            )}
+            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5"><Calendar size={14} /> Жесткий дедлайн</label>
+            {canEditCore ? <input type="date" className="w-full border border-gray-300 rounded-lg p-2 text-sm outline-none" value={task.deadline} onChange={e => handleUpdate({ deadline: e.target.value })} /> : <div className="text-sm font-medium text-gray-900">{new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5"><Clock size={14}/> Оценка дизайнера</label>
-            <input 
-              type="date" disabled={!canChangeStatusAndLinks}
-              className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2 shadow-sm disabled:bg-gray-50 disabled:text-gray-500 outline-none"
-              value={task.estimatedDeadline || ''} onChange={e => handleUpdate({ estimatedDeadline: e.target.value })}
-            />
+            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider flex items-center gap-1.5"><Clock size={14} /> Оценка дизайнера</label>
+            <input type="date" disabled={!canChangeStatusAndLinks} className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2 shadow-sm disabled:bg-gray-50 disabled:text-gray-500 outline-none" value={task.estimatedDeadline || ''} onChange={e => handleUpdate({ estimatedDeadline: e.target.value })} />
           </div>
         </div>
       </div>
@@ -773,11 +664,10 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
   const [formData, setFormData] = useState({ title: '', description: '', type: 'Web Design', priority: 'NORMAL', deadline: '', assigneeId: '' });
   const [links, setLinks] = useState([]);
 
-  // Вычисляем историю для автокомплита
   const searchHistory = useMemo(() => {
     const titles = [...new Set(allTasks.map(t => t.title))].filter(Boolean);
     const types = [...new Set(allTasks.map(t => t.type))].filter(Boolean);
-    if(types.length === 0) types.push('Web Design', 'Social Media', 'Branding', 'Print / Promo', 'UI/UX', 'Presentation');
+    if (types.length === 0) types.push('Web Design', 'Social Media', 'Branding', 'Print / Promo', 'UI/UX', 'Presentation');
     return { titles, types };
   }, [allTasks]);
 
@@ -789,8 +679,8 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
       const newState = { ...prev, title: val };
       const existing = allTasks.find(t => t.title === val);
       if (existing && val !== prev.title) {
-         newState.description = existing.description || '';
-         newState.type = existing.type || 'Web Design';
+        newState.description = existing.description || '';
+        newState.type = existing.type || 'Web Design';
       }
       return newState;
     });
@@ -798,17 +688,9 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      id: `TSK-${Math.floor(Math.random() * 900) + 100}`,
-      status: 'NEW',
-      creatorId: currentUser.id,
-      createdAt: new Date().toISOString(),
-      comments: [],
-      links: links
-    });
+    onSave({ ...formData, id: `TSK-${Math.floor(Math.random() * 900) + 100}`, status: 'NEW', creatorId: currentUser.id, createdAt: new Date().toISOString(), comments: [], links });
     onClose();
-    setFormData({title: '', description: '', type: searchHistory.types[0], priority: 'NORMAL', deadline: '', assigneeId: ''});
+    setFormData({ title: '', description: '', type: searchHistory.types[0], priority: 'NORMAL', deadline: '', assigneeId: '' });
     setLinks([]);
   };
 
@@ -819,7 +701,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
           <h2 className="text-xl font-bold text-gray-900">Новое техническое задание</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={24} /></button>
         </div>
-        
+
         <div className="p-6 overflow-y-auto flex-1">
           <form id="create-task-form" onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -830,28 +712,28 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Подробное описание (ТЗ) *</label>
-              <textarea required rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none focus:border-[#E53935]" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Тексты, размеры, пожелания по стилю..." />
+              <textarea required rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none focus:border-[#E53935]" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Тексты, размеры, пожелания по стилю..." />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Тип дизайна</label>
-                <input required list="history-types" type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} placeholder="Выберите или введите..." />
+                <input required list="history-types" type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} placeholder="Выберите или введите..." />
                 <datalist id="history-types">{searchHistory.types.map((t, i) => <option key={i} value={t} />)}</datalist>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Дедлайн *</label>
-                <input required type="date" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
+                <input required type="date" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
-                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
+                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value })}>
                   {Object.entries(PRIORITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Назначить на</label>
-                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.assigneeId} onChange={e => setFormData({...formData, assigneeId: e.target.value})}>
+                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.assigneeId} onChange={e => setFormData({ ...formData, assigneeId: e.target.value })}>
                   <option value="">Не выбрано (в бэклог)</option>
                   {users.filter(u => u.role === 'designer' || u.role === 'admin').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
@@ -864,7 +746,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, currentUser, users, allTasks
             </div>
           </form>
         </div>
-        
+
         <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>Отмена</Button>
           <Button form="create-task-form" type="submit">Поставить задачу</Button>
@@ -891,12 +773,7 @@ const ProfileModal = ({ isOpen, onClose, currentUser, onUpdateProfile }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdateProfile({ 
-      ...currentUser, 
-      name: formData.name, 
-      gender: formData.gender, 
-      avatar: avatarUrl
-    });
+    onUpdateProfile({ ...currentUser, name: formData.name, gender: formData.gender, avatar: avatarUrl });
     onClose();
   };
 
@@ -909,22 +786,20 @@ const ProfileModal = ({ isOpen, onClose, currentUser, onUpdateProfile }) => {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="flex flex-col items-center mb-4 gap-2">
-             <div onClick={randomizeAvatar} className="cursor-pointer hover:opacity-80 transition-opacity relative group" title="Кликните, чтобы сменить лицо">
-               <Avatar src={avatarUrl} size="xl" className="border-2 border-gray-300" />
-               <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <RefreshCw size={32} className="text-white" />
-               </div>
-             </div>
-             <span className="text-[10px] text-gray-400">Кликните по фото для смены</span>
+            <div onClick={randomizeAvatar} className="cursor-pointer hover:opacity-80 transition-opacity relative group" title="Кликните, чтобы сменить лицо">
+              <Avatar src={avatarUrl} size="xl" className="border-2 border-gray-300" />
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><RefreshCw size={32} className="text-white" /></div>
+            </div>
+            <span className="text-[10px] text-gray-400">Кликните по фото для смены</span>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Имя и Фамилия</label>
-            <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:border-[#E53935]" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Пол (для генерации аватара)</label>
-            <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.gender} onChange={e => { 
-              setFormData({...formData, gender: e.target.value}); 
+            <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white outline-none" value={formData.gender} onChange={e => {
+              setFormData({ ...formData, gender: e.target.value });
               setAvatarUrl(generateAvatar(formData.name || 'User', e.target.value, Math.random().toString(36).substring(7)));
             }}>
               <option value="male">Мужской</option>
@@ -942,53 +817,44 @@ const ProfileModal = ({ isOpen, onClose, currentUser, onUpdateProfile }) => {
 };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); 
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedTask, setSelectedTask] = useState(null);
-  
-  // State from Firebase
+
   const [fbUser, setFbUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [isDbReady, setIsDbReady] = useState(false);
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-  // Уведомления (Локальные)
-  const notify = (message, taskId) => {
+  const notify = (message, taskId = null) => {
     const newNotif = { id: Date.now(), text: message, taskId, read: false, time: new Date().toISOString() };
     setNotifications(prev => [newNotif, ...prev].slice(0, 20));
   };
 
   useEffect(() => {
-    if (!auth) return;
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) { console.error("Auth init err", e); }
+        await signInAnonymously(auth);
+      } catch (e) {
+        console.error('Auth init err', e);
+        setUsers(INITIAL_USERS);
+        setTasks(INITIAL_TASKS);
+        setIsDbReady(true);
+      }
     };
+
     initAuth();
     const unsubscribe = onAuthStateChanged(auth, setFbUser);
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!fbUser || !db) {
-       // Фолбек для Canvas без БД
-       if(!db) {
-          setUsers(INITIAL_USERS);
-          setTasks(INITIAL_TASKS);
-          setIsDbReady(true);
-       }
-       return;
-    }
+    if (!fbUser) return;
 
     const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
     const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
@@ -1004,7 +870,10 @@ export default function App() {
         setTasks(data);
       }
       firstLoadT = false;
-    }, console.error);
+    }, (error) => {
+      console.error('Tasks snapshot error', error);
+      setTasks(INITIAL_TASKS);
+    });
 
     const unsubUsers = onSnapshot(usersRef, (snap) => {
       const data = snap.docs.map(d => d.data());
@@ -1015,65 +884,51 @@ export default function App() {
         setIsDbReady(true);
       }
       firstLoadU = false;
-    }, console.error);
+    }, (error) => {
+      console.error('Users snapshot error', error);
+      setUsers(INITIAL_USERS);
+      setIsDbReady(true);
+    });
 
-    return () => { unsubTasks(); unsubUsers(); };
+    return () => {
+      unsubTasks();
+      unsubUsers();
+    };
   }, [fbUser]);
 
-
   const handleUpdateTask = async (updatedTask) => {
-    if (db && fbUser) {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', updatedTask.id), updatedTask);
-    } else {
-      setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)); // Fallback
-    }
-    
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', updatedTask.id), updatedTask);
+
     const oldTask = tasks.find(t => t.id === updatedTask.id);
     if (oldTask && oldTask.status !== updatedTask.status) {
       notify(`Статус задачи "${updatedTask.title}" изменен на "${STATUSES[updatedTask.status].label}"`, updatedTask.id);
     } else if (oldTask && oldTask.comments?.length !== updatedTask.comments?.length) {
-       notify(`Новый комментарий в задаче "${updatedTask.title}"`, updatedTask.id);
+      notify(`Новый комментарий в задаче "${updatedTask.title}"`, updatedTask.id);
     }
     setSelectedTask(updatedTask);
   };
 
   const handleCreateTask = async (newTask) => {
-    if (db && fbUser) {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id), newTask);
-    } else {
-      setTasks(prev => [newTask, ...prev]);
-    }
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id), newTask);
     notify(`Создана новая задача: "${newTask.title}"`, newTask.id);
   };
 
   const handleAddUser = async (newUserParams) => {
     const newUser = { id: `u${Date.now()}`, ...newUserParams };
-    if (db && fbUser) {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', newUser.id), newUser);
-    } else {
-      setUsers(prev => [...prev, newUser]);
-    }
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', newUser.id), newUser);
     notify(`Пользователь ${newUser.name} успешно добавлен.`);
   };
 
   const handleUpdateUserAdmin = async (updatedUser) => {
-    if (db && fbUser) {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', updatedUser.id), updatedUser);
-    } else {
-      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    }
-    if (currentUser.id === updatedUser.id) setCurrentUser(updatedUser);
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', updatedUser.id), updatedUser);
+    if (currentUser?.id === updatedUser.id) setCurrentUser(updatedUser);
     notify(`Данные пользователя ${updatedUser.name} обновлены.`);
   };
 
   const handleDeleteUser = async (userId) => {
     if (userId === currentUser.id) return;
-    if (db && fbUser) {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId));
-    } else {
-      setUsers(prev => prev.filter(u => u.id !== userId));
-    }
-    notify(`Пользователь был удален.`);
+    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId));
+    notify('Пользователь был удален.');
   };
 
   const handleLogout = () => {
@@ -1093,40 +948,34 @@ export default function App() {
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm z-10 hidden md:flex">
         <div className="p-6 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#E53935] flex items-center justify-center text-white font-bold text-xl shadow-sm">D</div>
-          <span className="font-bold text-xl text-gray-900 tracking-tight">Pokiza <span className="text-[#E53935]">Desing</span></span>
+          <span className="font-bold text-xl text-gray-900 tracking-tight">Pokiza <span className="text-[#E53935]">Design</span></span>
         </div>
         <nav className="flex-1 px-4 space-y-1 mt-4">
           <button onClick={() => { setActiveTab('dashboard'); setSelectedTask(null); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'dashboard' ? 'bg-[#FFEBEE] text-[#E53935]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
             <LayoutDashboard size={18} /> Дашборд
           </button>
-          
+
           {currentUser.role === 'admin' && (
             <button onClick={() => { setActiveTab('admin'); setSelectedTask(null); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'admin' ? 'bg-[#FFEBEE] text-[#E53935]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
               <Users size={18} /> Сотрудники
             </button>
           )}
         </nav>
-        
+
         <div className="p-4 border-t border-gray-200">
-           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
-             <LogOut size={16}/> Выйти
-           </button>
+          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"><LogOut size={16} />Выйти</button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden relative">
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20">
           <div className="flex items-center gap-4 flex-1">
-            <div className="md:hidden flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#E53935] flex items-center justify-center text-white font-bold text-xl">D</div>
-            </div>
+            <div className="md:hidden flex items-center gap-2"><div className="w-8 h-8 rounded-lg bg-[#E53935] flex items-center justify-center text-white font-bold text-xl">D</div></div>
           </div>
-          
+
           <div className="flex items-center gap-4 relative">
-            {(currentUser.role === 'admin' || currentUser.role === 'marketer') && (
-              <Button onClick={() => setIsCreateModalOpen(true)} className="hidden sm:flex"><Plus size={18} className="mr-1.5" /> Создать ТЗ</Button>
-            )}
-            
+            {(currentUser.role === 'admin' || currentUser.role === 'marketer') && <Button onClick={() => setIsCreateModalOpen(true)} className="hidden sm:flex"><Plus size={18} className="mr-1.5" /> Создать ТЗ</Button>}
+
             <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
               <Bell size={20} />
               {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#E53935] rounded-full border-2 border-white"></span>}
@@ -1136,18 +985,14 @@ export default function App() {
               <div className="absolute top-full right-16 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col">
                 <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                   <span className="font-semibold text-sm">Уведомления</span>
-                  <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-[#E53935] hover:underline">Прочитать все</button>
+                  <button onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))} className="text-xs text-[#E53935] hover:underline">Прочитать все</button>
                 </div>
                 <div className="max-h-80 overflow-y-auto p-2">
-                  {notifications.length > 0 ? notifications.map(n => (
-                    <div key={n.id} className={`p-3 text-sm rounded-lg mb-1 ${n.read ? 'bg-white text-gray-600' : 'bg-blue-50/50 text-gray-900 font-medium'}`}>
-                      {n.text} <div className="text-xs text-gray-400 mt-1">{new Date(n.time).toLocaleTimeString()}</div>
-                    </div>
-                  )) : <div className="p-4 text-center text-sm text-gray-500">Нет новых уведомлений</div>}
+                  {notifications.length > 0 ? notifications.map(n => <div key={n.id} className={`p-3 text-sm rounded-lg mb-1 ${n.read ? 'bg-white text-gray-600' : 'bg-blue-50/50 text-gray-900 font-medium'}`}>{n.text}<div className="text-xs text-gray-400 mt-1">{new Date(n.time).toLocaleTimeString()}</div></div>) : <div className="p-4 text-center text-sm text-gray-500">Нет новых уведомлений</div>}
                 </div>
               </div>
             )}
-            
+
             <div className="h-8 w-px bg-gray-200 mx-2 hidden sm:block"></div>
             <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onClick={() => setIsProfileModalOpen(true)} title="Настройки профиля">
               <div className="text-right hidden md:block">
@@ -1156,8 +1001,8 @@ export default function App() {
               </div>
               <Avatar src={currentUser.avatar} />
             </div>
-            
-            <button onClick={handleLogout} className="md:hidden p-2 text-gray-400 hover:text-red-600 transition-colors"><LogOut size={20}/></button>
+
+            <button onClick={handleLogout} className="md:hidden p-2 text-gray-400 hover:text-red-600 transition-colors"><LogOut size={20} /></button>
           </div>
         </header>
 
@@ -1167,14 +1012,7 @@ export default function App() {
           ) : selectedTask ? (
             <TaskDetail task={selectedTask} users={users} onBack={() => setSelectedTask(null)} onUpdateTask={handleUpdateTask} currentUser={currentUser} />
           ) : (
-            <Dashboard 
-              tasks={tasks} users={users} 
-              onViewTask={(t) => {
-                 setSelectedTask(t);
-                 setNotifications(prev => prev.map(n => n.taskId === t.id ? {...n, read: true} : n));
-              }} 
-              onUpdateTask={handleUpdateTask} currentUser={currentUser} 
-            />
+            <Dashboard tasks={tasks} users={users} onViewTask={(t) => { setSelectedTask(t); setNotifications(prev => prev.map(n => n.taskId === t.id ? { ...n, read: true } : n)); }} onUpdateTask={handleUpdateTask} currentUser={currentUser} />
           )}
         </main>
       </div>
